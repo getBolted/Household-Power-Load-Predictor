@@ -1,6 +1,7 @@
 import xgboost as xgb 
 import pandas as pd
 import numpy as np
+import pickle
 
 from sklearn.metrics import mean_squared_error, mean_absolute_error
 
@@ -20,12 +21,9 @@ y.index = y.index.astype('datetime64[ns]')
 y['Predict'] = -1
 y = y.filter(['Aggregate', 'Predict'])
 
-xgtrain = xgb.DMatrix(X.values)
+loaded_model = pickle.load(open("pima.pickle.dat", "rb"))
 
-model = xgb.Booster()
-model.load_model('500_retro_only_model.model')
-
-predict = model.predict(xgtrain)
+predict = loaded_model.predict(X)
 
 y['Predict'] = predict
 
@@ -33,7 +31,5 @@ print('MAE is - ', mean_absolute_error(y_true=y['Aggregate'],
                    y_pred=y['Predict']), 'W')
 print('MAPE is - ', mean_absolute_percentage_error(y_true=y['Aggregate'],
                    y_pred=y['Predict']), ' %')
-
-
 
 
