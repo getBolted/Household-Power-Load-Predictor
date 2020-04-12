@@ -1,6 +1,6 @@
 import pandas as pd
 from sklearn.metrics import mean_absolute_error
-from xgboost import XGBRegressor
+from catboost import CatBoostRegressor
 import numpy as np
 from sklearn.model_selection import GridSearchCV
 from sklearn.model_selection import TimeSeriesSplit
@@ -42,43 +42,59 @@ X_test = data_test.drop('Aggregate', axis = 1)
 y_test = data_test['Aggregate']
 
 # param_test1= {
-#  'reg_alpha':[45e-7, 46e-7, 47e-7,48e-7, 49e-7, 50e-7,51e-7, 52e-7, 53e-7,54e-7]
+# 	'l2_leaf_reg' : [1000, 1200, 1300, 1400, 1500]
 # }
 # gsearch = GridSearchCV(estimator =
-#                       XGBRegressor(
-# # tree_method='gpu_hist', 
-#  #gpu_id=0,
+#                       CatBoostRegressor(
+#     loss_function = 'MAPE', 
+#     custom_metric = 'MAE',
+#     random_seed=17,
+#     iterations=300,
+#     depth = 6,
+#     bagging_temperature = 0, 
+#     one_hot_max_size = 0, 
+#     random_strength = 5, 
+#     min_data_in_leaf = 0,
+#     learning_rate=0.1,
+#     l2_leaf_reg=3,
+#     leaf_estimation_iterations = 10,
+#     l2_leaf_reg = 1000,
+#     diffusion_temperature =0), param_grid=param_test1, scoring='neg_mean_absolute_error', verbose=4, n_jobs=-1)
+# gsearch.fit(X_test, y_test)
+
+
+# print(gsearch.best_params_ , gsearch.best_score_)
+# reg = XGBRegressor(
+#  # tree_method='gpu_hist', 
+#  # gpu_id=0,
 #  max_depth = 10, 
 #  gamma=0,
 #  subsample = 0.6606, 
 #  colsample_bytree = 0.859,
 #  min_child_weight = 2,                         
-#  learning_rate = 0.1,
-#  n_estimators=120,
 #  objective= 'reg:gamma',
 #  scale_pos_weight=1,
+#  reg_alpha = 5e-6,
 #  seed=17, 
-#  verbocity = 2), param_grid=param_test1, scoring='neg_mean_absolute_error', verbose=4, n_jobs=-1)
-# gsearch.fit(X_test, y_test)
+#  learning_rate = 0.1, #0.001
+#  n_estimators=300,  #30000
+#  verbocity = 2)
 
-
-# print(gsearch.best_params_ , gsearch.best_score_)
-reg = XGBRegressor(
- # tree_method='gpu_hist', 
- # gpu_id=0,
- max_depth = 10, 
- gamma=0,
- subsample = 0.6606, 
- colsample_bytree = 0.859,
- min_child_weight = 2,                         
- objective= 'reg:gamma',
- scale_pos_weight=1,
- reg_alpha = 5e-6,
- seed=17, 
- learning_rate = 0.1, #0.001
- n_estimators=300,  #30000
- verbocity = 2)
-
+reg = CatBoostRegressor(
+ 	loss_function = 'MAPE', 
+    custom_metric = 'MAE',
+    random_seed=17,
+    iterations=3000,
+    depth = 6,
+    bagging_temperature = 0, 
+    one_hot_max_size = 0, 
+    random_strength = 5, 
+    min_data_in_leaf = 0,
+    learning_rate=0.01,
+    leaf_estimation_iterations = 10,
+    l2_leaf_reg = 1000,
+    diffusion_temperature =0
+    )
 reg.fit(X_train, y_train,eval_set=[(X_train, y_train), (X_test, y_test)],early_stopping_rounds=50,verbose=True)
 
 data_test['Predict'] = reg.predict(X_test)
@@ -92,5 +108,5 @@ print('MAE is - ', mean_absolute_error(y_true=data_test['Aggregate'],
 print('MAPE is - ', mean_absolute_percentage_error(y_true=data_test['Aggregate'],
                    y_pred=data_test['Predict']), ' %')
 
-pickle.dump(reg, open("500-300-32bit.pickle.dat", "wb"))
-reg.save_model('500-300-32bit.model')
+pickle.dump(reg, open("ctb.pickle.dat", "wb"))
+# reg.save_model('500-300-32bit.model')
